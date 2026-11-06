@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Streamline – Swim Tracker</title>
+<meta name="description" content="Track swim times, graph improvement, project future times and plan meets.">
+<meta name="theme-color" content="#0a5875">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Streamline">
+<style>
+:root{--bg1:#e4f7f9;--bg2:#a7dce5;--deep:#052f48;--mid:#0a5a78;--hi:#0f86a6;--teal:#3fe0d2;--green:#35f07f;--ink:#0c2b3a;--mut:#6a8794;--soft:#eef4f7;--red:#ff5a5a;--amber:#ffb84a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+button{font-family:inherit;cursor:pointer}
+body{font-family:ui-rounded,"SF Pro Rounded","Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);display:flex;justify-content:center;align-items:center;overscroll-behavior:none}
+#app{position:relative;width:100%;max-width:440px;height:100vh;height:100dvh;background:radial-gradient(120% 60% at 50% 0%,#0d7396 0%,#0a5a78 35%,#06405a 70%,#052f48 100%);display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:600px){#app{height:min(920px,calc(100dvh - 40px));border-radius:44px;box-shadow:0 30px 80px rgba(5,47,72,.35)}}
+#view{flex:1;overflow-y:auto;overflow-x:hidden;padding:calc(env(safe-area-inset-top) + 18px) 18px 130px;-webkit-overflow-scrolling:touch}
+#view::-webkit-scrollbar{width:0}
+h1{color:#fff;font-size:26px;margin:4px 0 2px}
+h2{margin:6px 0 4px;font-size:21px}
+h3{margin:0;font-size:19px;color:#fff}
+.sub{color:#9fd0de;font-size:13px;margin-bottom:14px}
+.hint{font-size:11px;color:var(--mut);font-weight:600}
+
+/* header */
+.hdr{display:flex;align-items:center;gap:12px;color:#fff;margin-bottom:6px}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3fe0d2,#1b7fb0);display:grid;place-items:center;font-weight:800;color:#06384f;border:2px solid rgba(255,255,255,.55);flex:none}
+.hi{font-size:11px;color:#8fd0df}.nm{font-weight:800;font-size:16px}
+.bell{margin-left:auto;width:42px;height:42px;border-radius:14px;border:0;background:rgba(255,255,255,.12);color:#fff;position:relative;display:grid;place-items:center}
+.bell svg{width:20px;height:20px}
+.dot{position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:#ff4d4d}
+.go{width:196px;height:196px;border-radius:50%;margin:10px auto 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#c6ecf5;border:0;background:radial-gradient(circle at 35% 28%,#12809f,#0a4e69 72%);box-shadow:inset 0 2px 10px rgba(255,255,255,.18),0 22px 40px rgba(0,0,0,.35),0 0 0 14px rgba(255,255,255,.04),0 0 0 30px rgba(255,255,255,.02);font-weight:700;font-size:15px;transition:transform .15s}
+.go:active{transform:scale(.97)}
+.go svg{width:58px;height:58px}
+
+/* glass */
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:16px;color:#fff;margin-bottom:14px;position:relative}
+.chips{display:flex;justify-content:space-between;margin-bottom:10px}
+.chip{display:inline-flex;gap:5px;align-items:center;font-size:11px;font-weight:700;padding:5px 11px;border-radius:12px;background:rgba(255,255,255,.12);color:#d4f1f7}
+.chip.g{color:#47f08a;border:1px solid #2fbf6a;background:rgba(47,191,106,.12)}
+.stats{display:flex;gap:14px;font-size:12px;color:#b9e3ee;font-weight:600;margin:6px 0 12px;flex-wrap:wrap}
+.bar{height:12px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#1fe05a,#4dff8c);border-radius:8px;transition:width .5s}
+.bar.l{background:#dce8ee;height:9px}
+.cap{font-size:11px;color:#8fd0df;margin-top:6px;font-weight:600}
+.foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12.5px;color:#d4f1f7;font-weight:600;gap:10px}
+.rb{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;display:grid;place-items:center;flex:none}
+.rb svg{width:18px;height:18px}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:10px 0 12px;text-align:center;font-size:11px;color:#9fd0de;font-weight:700}
+.wk b{display:grid;place-items:center;width:32px;height:32px;margin:6px auto 0;border-radius:50%;background:rgba(255,255,255,.1);color:#cfeff7;font-size:13px}
+.wk b.done{background:var(--teal);color:#06384f}
+.wk b.now{background:#fff;color:#06384f;box-shadow:0 0 0 4px rgba(63,224,210,.35)}
+.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#9fd0de;font-weight:800}
+button.chip{border:0;font-family:inherit}
+.goal{padding:12px 0 6px;border-top:1px solid rgba(255,255,255,.1);cursor:pointer}
+.gh{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:14px}
+.gh span{color:#b9e3ee;font-variant-numeric:tabular-nums;white-space:nowrap}.gh span b{color:#fff}
+
+/* white sheet card */
+.sheetcard{background:#fff;color:var(--ink);border-radius:30px;padding:14px 16px 18px;margin:6px -6px 0;box-shadow:0 -6px 30px rgba(0,0,0,.12)}
+.tabs{display:flex;margin-bottom:12px}
+.tab{background:none;border:0;font-weight:700;font-size:13px;color:#9bb0b9;padding:12px 6px;flex:1;position:relative}
+.tab.on{color:var(--ink)}
+.tab.on::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);width:34px;height:3px;border-radius:3px;background:var(--teal)}
+.row{background:var(--soft);border-radius:16px;padding:12px 14px;margin-bottom:10px;position:relative}
+.row .top{display:flex;justify-content:space-between;font-size:12px;color:#8aa0ab;font-weight:700}
+.row .main{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;gap:8px}
+.row .ev{font-weight:800;font-size:15px}
+.row .tm{font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.row .meta{display:flex;gap:12px;font-size:11.5px;color:#587684;font-weight:700;margin-top:6px;flex-wrap:wrap}
+.pb{background:linear-gradient(90deg,#ffb84a,#ff8a3a);color:#fff;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:800;margin-left:6px;vertical-align:middle}
+.up{color:#14a85a}.dn{color:#e0483e}
+.empty{text-align:center;color:var(--mut);font-size:14px;padding:22px 10px;line-height:1.5}
+.glass .empty{color:#b9e3ee}
+
+/* challenges */
+.hs{display:flex;gap:12px;overflow-x:auto;margin:0 -16px 12px;padding:0 16px 4px;scroll-snap-type:x mandatory}
+.hs::-webkit-scrollbar{display:none}
+.ch{flex:none;width:150px;height:150px;border-radius:22px;padding:14px;color:#fff;display:flex;flex-direction:column;justify-content:space-between;scroll-snap-align:start}
+.ch.red{background:linear-gradient(145deg,#ff6b6b,#e63a50)}.ch.green{background:linear-gradient(145deg,#37d67a,#10a553)}.ch.blue{background:linear-gradient(145deg,#4aa8ff,#2a62e6)}.ch.purple{background:linear-gradient(145deg,#a07bff,#6a3fe0)}
+.ch b{font-size:18px;line-height:1.1;display:block}.ch small{opacity:.85;font-size:11px;font-weight:600}
+.ch .bar{height:7px;background:rgba(255,255,255,.3)}.ch .bar i{background:#fff}
+.ch em{font-style:normal;font-size:11px;font-weight:800}
+
+/* targets */
+.tg .hd{display:flex;justify-content:space-between;align-items:center}
+.x{background:none;border:0;color:#9bb0b9;font-size:16px;padding:0 4px}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tile{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:13px;color:#fff}
+.tile .k{font-size:11px;color:#9fd0de;font-weight:700}
+.tile .v{font-size:22px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:11px;color:#b9e3ee;font-weight:600;margin-top:2px}
+.tile .v.g{color:#47f08a}
+.dsel{width:100%;padding:13px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;font-size:16px;font-weight:700;margin-bottom:12px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M1 1l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.dsel option{color:#000}
+.seg{display:flex;background:#eaf2f5;border-radius:14px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:11px;font-weight:700;font-size:13px;color:#587684}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.seg.d{background:rgba(255,255,255,.1)}.seg.d button{color:#b9e3ee}.seg.d button.on{background:rgba(255,255,255,.95);color:#06384f}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.ctl small{display:block;color:#9fd0de;font-size:10.5px;font-weight:800;margin:0 2px 5px;letter-spacing:.05em;text-transform:uppercase}
+svg.cht{width:100%;height:auto;display:block;touch-action:manipulation}
+.insp{font-size:12.5px;color:#d4f1f7;font-weight:600;margin-top:10px;line-height:1.5}
+.insp b{color:#fff}
+.mini{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--soft);margin-bottom:9px;cursor:pointer}
+.mini .l{flex:1}.mini .l b{display:block;font-size:14px}.mini .l span{font-size:11.5px;color:var(--mut);font-weight:600}
+.mini .r{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.mini .r span{display:block;font-size:11px;font-weight:700}
+
+/* meets */
+.mc{background:#fff;color:var(--ink);border-radius:24px;padding:16px;margin-bottom:14px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.mc .t{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.mc .t b{font-size:18px;display:block}.mc .t span.s{font-size:12px;color:var(--mut);font-weight:600}
+.pill{font-size:11px;font-weight:800;padding:5px 10px;border-radius:11px;background:#e1f6f3;color:#0b8f84;white-space:nowrap}
+.pill.am{background:#fff1da;color:#b36d00}
+.er{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid #e8f0f3;font-size:14px}
+.er:first-of-type{margin-top:10px}
+.er b{font-weight:800}.er .p{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.er .p small{display:block;font-size:10.5px;color:var(--mut);font-weight:700}
+.cd{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+.acts{display:flex;gap:8px;margin-top:12px}
+.sm{flex:1;border:0;border-radius:13px;padding:11px 8px;font-weight:800;font-size:13px;background:#eaf2f5;color:#0a5a78}
+.sm.p{background:linear-gradient(135deg,#0f9bbd,#06577a);color:#fff}.sm.d{background:#ffe9e9;color:#d03b3b;flex:.5}
+.tip{font-size:12px;background:#fff6e5;color:#8a5a00;padding:9px 11px;border-radius:12px;margin-top:10px;font-weight:600;line-height:1.4}
+.score{display:flex;align-items:center;gap:14px}
+.ring{position:relative;flex:none}
+.score>svg{width:20px;height:20px;flex:none;color:#8aa0ab}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.ring b small{font-size:10px;color:var(--mut);font-weight:700}
+
+/* nav */
+#nav{position:absolute;left:0;right:0;bottom:0;height:calc(78px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#fff;border-radius:30px 30px 0 0;display:grid;grid-template-columns:1fr 1fr 88px 1fr 1fr;align-items:center;box-shadow:0 -8px 30px rgba(0,0,0,.2);z-index:5}
+.nv{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:700;color:#8aa0ab;padding:12px 0;position:relative}
+.nv svg{width:23px;height:23px}
+.nv.on{color:#0f86a6}
+.nv.on::before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:3px;background:var(--teal)}
+#plus{position:absolute;left:50%;top:-28px;transform:translateX(-50%);width:68px;height:68px;border-radius:50%;border:5px solid #fff;background:radial-gradient(circle at 30% 25%,#1aa6c9,#06577a);color:#fff;font-size:34px;line-height:1;box-shadow:0 10px 24px rgba(6,87,122,.5);padding:0}
+
+/* sheet */
+#sw{position:fixed;inset:0;background:rgba(3,25,38,.55);display:none;align-items:flex-end;justify-content:center;z-index:50;backdrop-filter:blur(3px)}
+#sw.on{display:flex}
+.sheet{width:100%;max-width:440px;max-height:92vh;max-height:92dvh;overflow:auto;background:#fff;border-radius:30px 30px 0 0;padding:12px 20px calc(24px + env(safe-area-inset-bottom));animation:up .25s ease;color:var(--ink)}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.grab{width:44px;height:5px;border-radius:5px;background:#d5e1e7;margin:0 auto 14px}
+label.f{display:block;font-size:12px;font-weight:800;color:var(--mut);margin:14px 0 6px}
+input,select.in{width:100%;padding:13px 14px;border:1.5px solid #dbe7ec;border-radius:14px;font-size:16px;font-family:inherit;color:var(--ink);background:#f7fbfc}
+input:focus,select.in:focus{outline:none;border-color:#12a2c4}
+.btn{width:100%;border:0;border-radius:18px;padding:15px;font-weight:800;font-size:16px;color:#fff;background:linear-gradient(135deg,#0f9bbd,#06577a);margin-top:16px}
+.btn.ghost{background:#eaf2f5;color:#0a5a78}.btn.danger{background:#ffe9e9;color:#d03b3b}
+.chipset{display:flex;flex-wrap:wrap;gap:8px}
+.ec{border:1.5px solid #dbe7ec;background:#f7fbfc;border-radius:12px;padding:8px 12px;font-weight:700;font-size:13px;color:#456}
+.ec.on{background:#0f86a6;border-color:#0f86a6;color:#fff}
+.dr{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid #e8f0f3;font-size:14px;align-items:center;gap:10px}
+.dr b{font-variant-numeric:tabular-nums}
+#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);background:#052f48;color:#fff;padding:12px 18px;border-radius:16px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:86vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.sec{margin:18px 0 8px;color:#fff;font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.sec a{font-size:12px;color:#7fe0ff;font-weight:700}
+.big{font-size:44px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="view"></main>
+  <nav id="nav">
+    <button class="nv" data-a="tab" data-v="home"></button>
+    <button class="nv" data-a="tab" data-v="progress"></button>
+    <span></span>
+    <button class="nv" data-a="tab" data-v="meets"></button>
+    <button class="nv" data-a="tab" data-v="profile"></button>
+    <button id="plus" data-a="log" aria-label="Log a swim">+</button>
+  </nav>
+</div>
+<div id="sw"></div>
+<div id="toast"></div>
+<noscript>Streamline needs JavaScript to run.</noscript>
+
+<script>
+(()=>{
+'use strict';
+/* ============ helpers ============ */
+const $=(s,e=document)=>e.querySelector(s);
+const KEY='streamline.v1', DAY=864e5, MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const COURSES=['SCY','SCM','LCM'];
+const EV_Y=['50 Free','100 Free','200 Free','500 Free','1000 Free','1650 Free','100 Back','200 Back','100 Breast','200 Breast','100 Fly','200 Fly','100 IM','200 IM','400 IM'];
+const EV_M=['50 Free','100 Free','200 Free','400 Free','800 Free','1500 Free','50 Back','100 Back','200 Back','50 Breast','100 Breast','200 Breast','50 Fly','100 Fly','200 Fly','200 IM','400 IM'];
+const evFor=c=>c==='SCY'?EV_Y:EV_M;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dstr=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>dstr(new Date());
+const tOf=s=>new Date(s+'T12:00:00').getTime();
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const fdate=(s,y)=>{const d=new Date(tOf(s));return MON[d.getMonth()]+' '+d.getDate()+((y||d.getFullYear()!==new Date().getFullYear())?', '+d.getFullYear():'')};
+const rel=s=>{const n=Math.round((tOf(today())-tOf(s))/DAY);return n===0?'Today':n===1?'Yesterday':fdate(s)};
+function fmt(sec,dec=2){if(sec==null||!isFinite(sec))return '–';const f=Math.pow(10,dec),n=Math.round(sec*f),m=Math.floor(n/(60*f)),r=(n-m*60*f)/f,rs=r.toFixed(dec);return m?m+':'+(r<10?'0':'')+rs:rs}
+const fdelta=d=>(d<0?'−':'+')+Math.abs(d).toFixed(2);
+function parseT(v){v=String(v||'').trim().replace(',','.');if(!v)return null;let m,r=null;
+ if(m=v.match(/^(\d+):(\d{1,2}(?:\.\d+)?)$/))r=+m[1]*60+ +m[2];
+ else if(m=v.match(/^(\d+)\.(\d{2})\.(\d{1,2})$/))r=+m[1]*60+ +m[2]+ +('0.'+m[3]);
+ else if(/^\d+(\.\d+)?$/.test(v))r=+v;
+ return r!=null&&r>=10&&r<=6000?Math.round(r*100)/100:null}
+const key=(c,e)=>c+'|'+e;
+const evLabel=k=>{const [c,e]=k.split('|');return e+' · '+c};
+const dist=e=>parseInt(e,10);
+const unit=c=>c==='SCY'?'y':'m';
+const daysTo=m=>Math.round((tOf(m.date)-tOf(today()))/DAY);
+const meetT=m=>tOf(m.date);
+const I=(p,c='')=>`<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const IC={
+ home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/>',
+ flag:'<path d="M5 21V4"/><path d="M5 4h13l-2.5 4 2.5 4H5"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+ bell:'<path d="M6 9a6 6 0 0112 0c0 6 2 7 2 8H4c0-1 2-2 2-8"/><path d="M10 21h4"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'};
+const SWIM='<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="45" cy="17" r="5" fill="currentColor"/><path d="M9 35c6-9 13-13 23-10l9 4"/><path d="M8 47c4 3 8 3 12 0s8-3 12 0 8 3 12 0 8-3 12 0"/><path d="M8 57c4 3 8 3 12 0s8-3 12 0 8 3 12 0 8-3 12 0" opacity=".55"/></svg>';
+
+/* ============ state ============ */
+const blank=()=>({v:1,name:'',course:'SCY',swims:[],meets:[],targets:{},seen:false});
+function normTargets(o){const t={};Object.keys(o.targets||{}).forEach(k=>{const g=o.targets[k];t[k]=typeof g==='number'?{time:g,by:''}:g});o.targets=t;return o}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.v)return normTargets(Object.assign(blank(),r))}catch(e){}return blank()}
+let S=load();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let tab='home',hTab='recent',mTab='plan',pk=null,pr='1y',ph=90,CP=[],deferred=null;
+
+/* ============ data queries ============ */
+const swimsK=k=>S.swims.filter(x=>key(x.course,x.event)===k).map(x=>Object.assign({},x,{t:tOf(x.date)})).sort((a,b)=>a.t-b.t||b.time-a.time);
+const pb=k=>{let b=null;for(const x of S.swims)if(key(x.course,x.event)===k&&(b==null||x.time<b))b=x.time;return b};
+const keys=()=>{const last={};S.swims.forEach(x=>{const k=key(x.course,x.event);const t=tOf(x.date);if(!(last[k]>=t))last[k]=t});return Object.keys(last).sort((a,b)=>last[b]-last[a])};
+const pbBefore=(k,t,ex)=>{let b=null;for(const x of S.swims){if(key(x.course,x.event)!==k)continue;if(ex&&x.meetId===ex)continue;if(tOf(x.date)>=t)continue;if(b==null||x.time<b)b=x.time}return b};
+
+/* ============ projection engine ============ */
+// Recency-weighted regression on the last 10 swim-days, slope capped, with diminishing returns over time.
+function project(k,target,asOf){
+ asOf=asOf==null?Date.now():asOf;
+ const all=swimsK(k).filter(x=>x.t<=asOf);
+ if(!all.length)return null;
+ const by={};all.forEach(x=>{if(!by[x.date]||x.time<by[x.date].time)by[x.date]=x});
+ const pts=Object.values(by).sort((a,b)=>a.t-b.t).slice(-10);
+ const best=Math.min(...all.map(x=>x.time)),last=pts[pts.length-1],n=pts.length;
+ const h=Math.max(0,(target-last.t)/DAY);
+ if(n<2){const p=last.time;return{time:p,low:p*.985,high:p*1.015,conf:'low',n}}
+ let sw=0,sx=0,sy=0,sxx=0,sxy=0;
+ const pw=pts.map(p=>{const x=(p.t-last.t)/DAY,w=Math.exp(x/120);sw+=w;sx+=w*x;sy+=w*p.time;sxx+=w*x*x;sxy+=w*x*p.time;return{x,w,p}});
+ const den=sw*sxx-sx*sx;
+ let b=den>1e-9?(sw*sxy-sx*sy)/den:0;const a=(sy-b*sx)/sw;
+ const base=Math.min(Math.max(a,best*.995),last.time*1.03);
+ b=Math.max(-base*.0003,Math.min(b,base*.0001));
+ const heff=150*Math.log(1+h/150);
+ let proj=Math.max(base+b*heff,best*.965);
+ let ss=0;pw.forEach(q=>{ss+=q.w*Math.pow(q.p.time-(a+b*q.x),2)});
+ const sd=Math.sqrt(ss/sw),band=Math.max(proj*.006,sd)*(1+h/240);
+ return{time:proj,low:proj-band,high:proj+band,conf:n>=6?'high':n>=3?'med':'low',n}}
+const confCol=c=>c==='high'?'#1fc46a':c==='med'?'#ffb84a':'#b9c6cd';
+const confTxt=c=>c==='high'?'High confidence':c==='med'?'Medium confidence':'Low confidence – log more swims';
+
+/* ============ meet score ============ */
+function scoreEvent(k,ev,time,mt,exId){
+ const prev=pbBefore(k,mt,exId);
+ let proj=ev.proj&&ev.proj.time;
+ if(proj==null){const p=project(k,mt,mt-DAY);proj=p?p.time:null}
+ let s1=null,s2=null;
+ if(proj!=null)s1=clamp(6+1.8*((proj-time)/proj*100),0,10);
+ if(prev!=null)s2=clamp(5+2.5*((prev-time)/prev*100),0,10);
+ const sc=(s1!=null&&s2!=null)?.55*s1+.45*s2:(s1!=null?s1:(s2!=null?s2:7));
+ return{score:Math.round(sc*10)/10,s1,s2,proj,prev,isPB:prev==null||time<prev}}
+function computeResults(m){
+ const mt=meetT(m),res=[];
+ m.events.forEach(ev=>{const sws=S.swims.filter(x=>x.meetId===m.id&&x.event===ev.event);if(!sws.length)return;
+  const sw=sws.reduce((a,b)=>b.time<a.time?b:a);
+  res.push(Object.assign({event:ev.event,time:sw.time,sid:sw.id},scoreEvent(key(m.course,ev.event),ev,sw.time,mt,m.id)))});
+ m.results=res.length?res:null;m.score=res.length?Math.round(res.reduce((a,b)=>a+b.score,0)/res.length*10)/10:null}
+// Every day (and course) with logged times becomes a meet automatically; planned meets on that date adopt the times.
+function syncMeets(){
+ const by={};S.meets.forEach(m=>{const k=m.date+'|'+m.course;if(!by[k])by[k]=m});
+ S.swims.forEach(x=>{const k=x.date+'|'+x.course;let m=by[k];
+  if(!m){m={id:uid(),name:'Meet · '+fdate(x.date),date:x.date,loc:'',course:x.course,events:[],created:x.date,auto:true};S.meets.push(m);by[k]=m}
+  x.meetId=m.id;x.type='meet';
+  if(!m.events.some(e=>e.event===x.event))m.events.push({event:x.event,proj:null,auto:true})});
+ S.meets=S.meets.filter(m=>!(m.auto&&!S.swims.some(x=>x.meetId===m.id)));
+ S.meets.forEach(m=>{
+  m.events=m.events.filter(ev=>!(ev.auto&&!S.swims.some(x=>x.meetId===m.id&&x.event===ev.event)));
+  m.events.forEach(ev=>{if(ev.auto||!ev.proj){const p=project(key(m.course,ev.event),meetT(m),meetT(m)-DAY);if(p)ev.proj=p}});
+  computeResults(m)});
+ save()}
+function commit(){syncMeets()}
+const scoreLabel=s=>s>=9?'Outstanding':s>=8?'Great meet':s>=7?'Strong swims':s>=6?'Solid meet':s>=4.5?'Off day':'Tough one';
+const scoreCol=s=>s>=8?'#1fc46a':s>=6?'#12b5c4':s>=4.5?'#ffb84a':'#ff5a5a';
+function ring(s,size=64){const r=size/2-6,c=2*Math.PI*r;return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#e2edf1" stroke-width="6"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${scoreCol(s)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c*s/10} ${c}" transform="rotate(-90 ${size/2} ${size/2})"/></svg><b>${s.toFixed(1)}</b></div>`}
+function refresh(m){if(m.results||m.date<today())return;let ch=false;m.events.forEach(ev=>{const p=project(key(m.course,ev.event),meetT(m));if(p){ev.proj=p;ch=true}});if(ch)save()}
+const upcoming=()=>S.meets.filter(m=>!m.results&&m.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
+const pastMeets=()=>S.meets.filter(m=>m.results||m.date<today()).sort((a,b)=>b.date.localeCompare(a.date));
+
+/* ============ misc computations ============ */
+const goalTime=k=>S.targets[k]?S.targets[k].time:null;
+function goalsCard(){
+ const ks=Object.keys(S.targets);
+ let h=`<div class="glass"><div class="chips" style="align-items:center;margin-bottom:4px"><span class="lbl">My goals</span><button class="chip" data-a="addTarget">+ Add goal</button></div>`;
+ if(!ks.length)return h+`<div class="stats" style="margin:8px 0 2px;line-height:1.5">Set a target time for any event – like breaking 50.00 in the 100 Free – and track how close you are.</div></div>`;
+ h+=ks.map(k=>{const g=S.targets[k],b=pb(k),sw=swimsK(k),first=sw.length?sw[0].time:null;
+  const p=b==null||first==null?0:b<=g.time?1:clamp((first-b)/Math.max(first-g.time,.01),.03,1);
+  let cap;
+  if(b==null)cap='Log a swim to start tracking';
+  else if(b<=g.time)cap='Goal reached 🎉';
+  else if(g.by){const dl=Math.round((tOf(g.by)-tOf(today()))/DAY),pj=project(k,tOf(g.by));
+   cap=dl<0?'Deadline passed · '+fmt(b-g.time)+'s short':dl+' day'+(dl===1?'':'s')+' left · projected '+fmt(pj.time)+(pj.time<=g.time?' ✓ on track':' (needs '+fmt(pj.time-g.time)+'s more)')}
+  else cap=eta(k,g.time).txt;
+  return `<div class="goal" data-a="editTarget" data-v="${esc(k)}"><div class="gh"><b>${esc(evLabel(k))}</b><span>${b!=null?fmt(b):'–'} → <b>${fmt(g.time)}</b></span></div><div class="bar"><i style="width:${(p*100).toFixed(0)}%"></i></div><div class="cap">${cap}</div></div>`}).join('');
+ return h+'<div class="cap" style="text-align:center;margin-top:10px">Tap a goal to edit or remove it</div></div>'}
+function swimInfo(x){const arr=swimsK(key(x.course,x.event));const i=arr.findIndex(y=>y.id===x.id);const prior=arr.slice(0,Math.max(i,0));
+ const pbp=prior.length?Math.min(...prior.map(y=>y.time)):null;return{isPB:pbp!=null&&x.time<pbp,first:!prior.length,delta:prior.length?x.time-prior[prior.length-1].time:null}}
+function barrier(t){const st=t<30?.5:t<60?1:t<130?2:5;return Math.floor((t-.01)/st)*st}
+function eta(k,tg){const b=pb(k);if(b==null)return{txt:'Log a swim to see a projection'};if(b<=tg)return{txt:'Target achieved 🎉',done:true};
+ const sw=swimsK(k),last=sw[sw.length-1].t;
+ for(let h=0;h<=730;h+=7){const t=Math.max(Date.now(),last)+h*DAY,p=project(k,t);if(p&&p.time<=tg)return{txt:'On pace for ~'+fdate(dstr(new Date(t)),true)}}
+ const p=project(k,Date.now()+730*DAY);return{txt:'Needs a bigger push – projection levels off near '+fmt(p.time)}}
+function challenges(){const c=[],ks=keys(),nm=upcoming()[0],gk=Object.keys(S.targets).filter(k=>pb(k)!=null&&pb(k)>S.targets[k].time).sort((a,b)=>(pb(a)/S.targets[a].time)-(pb(b)/S.targets[b].time))[0];
+ if(gk){const b=pb(gk),g=S.targets[gk].time;c.push({cls:'red',t:'Chase '+fmt(g),sub:evLabel(gk),p:clamp(1-(b-g)/(b*.05),.03,1),txt:fmt(b-g)+'s to go'})}
+ else if(!Object.keys(S.targets).length)c.push({cls:'red',t:'Set a goal',sub:'Pick a target time',p:.03,txt:'Tap + Add goal'});
+ if(ks.length){const k=ks[0],b=pb(k),br=barrier(b);c.push({cls:'green',t:'Break '+fmt(br),sub:evLabel(k),p:clamp(1-(b-br)/(b*.03),.03,1),txt:'PB '+fmt(b)})}
+ if(nm){const n=nm.events.length;c.push({cls:'blue',t:'Beat the Projections',sub:nm.name,p:clamp(1-daysTo(nm)/60,.05,1),txt:daysTo(nm)+' days to go · '+n+' event'+(n>1?'s':'')})}
+ const cut=Date.now()-30*DAY;let pbs=0;S.swims.forEach(x=>{if(tOf(x.date)>=cut&&swimInfo(x).isPB)pbs++});
+ c.push({cls:'purple',t:'PB Streak',sub:'3 PBs in 30 days',p:clamp(pbs/3,.03,1),txt:pbs+'/3 PBs'});return c}
+
+/* ============ views ============ */
+function vHome(){
+ const nm=upcoming()[0];
+ let h=`<div class="hdr"><div class="av" data-a="tab" data-v="profile" style="cursor:pointer">${esc((S.name||'S')[0].toUpperCase())}</div><div><div class="hi">Greetings!</div><div class="nm">${esc(S.name||'Swimmer')}</div></div></div>`;
+ h+=`<button class="go" data-a="log">${SWIM}<span>Log Swim</span></button>`;
+ if(nm){refresh(nm);const dt=daysTo(nm),tot=Math.max(1,meetT(nm)-tOf(nm.created||today())),prog=clamp(1-(meetT(nm)-Date.now())/tot,.04,1);
+  const top=nm.events.find(e=>e.proj);
+  h+=`<div class="glass"><div class="chips"><span class="chip">Next Meet</span><span class="chip g">● ${dt<=0?'Today':dt+' day'+(dt>1?'s':'')+' to go'}</span></div>
+   <h3>${esc(nm.name)}</h3><div class="stats"><span>${fdate(nm.date)}</span><span>${nm.events.length} event${nm.events.length>1?'s':''}</span><span>${nm.course}</span>${nm.loc?`<span>${esc(nm.loc)}</span>`:''}</div>
+   <div class="bar"><i style="width:${(prog*100).toFixed(0)}%"></i></div><div class="cap">Prep progress${dt<=14&&dt>0?' · taper window':''}</div>
+   <div class="foot"><span>${top?`Projected ${esc(top.event)}: <b>${fmt(top.proj.time)}</b>`:'Log swims to get projections'}</span><button class="rb" data-a="tab" data-v="meets" aria-label="Open planner">${I(IC.arrow)}</button></div></div>`}
+ else h+=`<div class="glass"><div class="chips"><span class="chip">Meet Planner</span></div><h3>Plan your next meet</h3><div class="stats"><span>Get projected times for every event</span></div><div class="foot"><span></span><button class="rb" data-a="addMeet" aria-label="Plan meet">${I(IC.arrow)}</button></div></div>`;
+ h+=goalsCard();
+ h+=`<div class="sheetcard"><div class="tabs">${[['recent','Recent Activities'],['chal','Challenges']].map(t=>`<button class="tab ${hTab===t[0]?'on':''}" data-a="hTab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>`;
+ if(hTab==='recent'){
+  const list=S.swims.slice().sort((a,b)=>b.date.localeCompare(a.date)||0).slice(0,12);
+  h+=list.length?list.map(x=>{const inf=swimInfo(x),m=x.meetId&&S.meets.find(y=>y.id===x.meetId);
+   return `<div class="row" data-a="editSwim" data-v="${x.id}" style="cursor:pointer"><div class="top"><span>${rel(x.date)}</span><span>${m?esc(m.name):''}</span></div>
+   <div class="main"><span class="ev">${esc(x.event)} <small style="color:#8aa0ab;font-weight:700">${x.course}</small>${inf.isPB?'<span class="pb">PB</span>':inf.first?'<span class="pb" style="background:#12a2c4">FIRST</span>':''}</span><span class="tm">${fmt(x.time)}</span></div>
+   <div class="meta"><span>${fmt(x.time/dist(x.event)*100)}/100${unit(x.course)}</span>${inf.delta!=null?`<span class="${inf.delta<0?'up':inf.delta>0?'dn':''}">${fdelta(inf.delta)}s vs last</span>`:''}${x.note?`<span>${esc(x.note)}</span>`:''}</div></div>`}).join('')+'<div class="hint" style="text-align:center;margin-top:4px">Tap a swim to edit or delete it</div>':`<div class="empty">No swims yet. Tap <b>Log Swim</b> to record your first time.</div>`}
+ else{const cs=challenges();h+=`<div class="hs">${cs.map(c=>`<div class="ch ${c.cls}"><div><b>${esc(c.t)}</b><small>${esc(c.sub)}</small></div><div><div class="bar"><i style="width:${(c.p*100).toFixed(0)}%"></i></div><em>${esc(c.txt)}</em></div></div>`).join('')}</div><div class="empty" style="padding-top:4px">Challenges update automatically from your swims.</div>`}
+ return h+'</div>'}
+
+function chart(k){
+ const all=swimsK(k);if(!all.length)return '<div class="empty">No swims for this event yet.</div>';
+ const nowT=Date.now(),lastT=all[all.length-1].t,ref=Math.max(nowT,lastT);
+ let rb=Infinity;all.forEach(x=>{x.rb=x.time<rb;rb=Math.min(rb,x.time)});
+ let t0=all[0].t;if(pr!=='all')t0=Math.max(t0,ref-({'3m':92,'6m':183,'1y':366}[pr])*DAY);
+ let pts=all.filter(x=>x.t>=t0);if(!pts.length){pts=[all[all.length-1]];t0=pts[0].t}
+ const tEnd=ref+ph*DAY;CP=pts;
+ const lp=pts[pts.length-1],N=16,ps=[];
+ if(tEnd>lastT)for(let i=1;i<=N;i++){const t=lastT+(tEnd-lastT)*i/N,p=project(k,t);ps.push(Object.assign({t},p))}
+ const vals=pts.map(x=>x.time);ps.forEach(p=>vals.push(p.low,p.high));
+ let lo=Math.min(...vals),hi=Math.max(...vals);const pd=(hi-lo||hi*.02)*.14;lo-=pd;hi+=pd;
+ const W=340,H=236,L=46,R=14,T=14,B=30,X=t=>L+(t-t0)/(tEnd-t0)*(W-L-R),Y=v=>T+(v-lo)/(hi-lo)*(H-T-B);
+ const dec=(hi-lo)<3?2:1;let s=`<svg class="cht" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5be9dc" stop-opacity=".35"/><stop offset="1" stop-color="#5be9dc" stop-opacity="0"/></linearGradient></defs>`;
+ for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.1)"/><text x="${L-6}" y="${y+3}" text-anchor="end" font-size="9.5" fill="#9fd0de">${fmt(v,dec)}</text>`}
+ for(let i=0;i<=3;i++){const t=t0+(tEnd-t0)*i/3,d=new Date(t);s+=`<text x="${X(t)}" y="${H-10}" text-anchor="${i===0?'start':i===3?'end':'middle'}" font-size="9.5" fill="#9fd0de">${MON[d.getMonth()]} '${String(d.getFullYear()).slice(2)}</text>`}
+ if(ps.length){let up='M'+X(lastT).toFixed(1)+' '+Y(lp.time).toFixed(1),dn='';ps.forEach(p=>up+=' L'+X(p.t).toFixed(1)+' '+Y(p.high).toFixed(1));
+  const band=ps.map(p=>'L'+X(p.t).toFixed(1)+' '+Y(p.low).toFixed(1)).reverse().join(' ');
+  s+=`<path d="${up} ${band} Z" fill="rgba(255,255,255,.13)"/>`;
+  s+=`<path d="M${X(lastT).toFixed(1)} ${Y(lp.time).toFixed(1)} ${ps.map(p=>'L'+X(p.t).toFixed(1)+' '+Y(p.time).toFixed(1)).join(' ')}" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>`}
+ if(nowT>=t0&&nowT<=tEnd)s+=`<line x1="${X(nowT)}" x2="${X(nowT)}" y1="${T}" y2="${H-B}" stroke="rgba(255,255,255,.25)" stroke-dasharray="2 3"/><text x="${X(nowT)+3}" y="${T+9}" font-size="9" fill="#9fd0de">Today</text>`;
+ const c=k.split('|')[0];
+ S.meets.filter(m=>m.course===c&&!m.results&&m.date>=today()&&m.events.some(e=>key(m.course,e.event)===k)).forEach(m=>{const t=meetT(m);if(t<t0||t>tEnd)return;const p=project(k,t);
+  s+=`<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${H-B}" stroke="${'#ffb84a'}" stroke-dasharray="3 3" opacity=".8"/>`;
+  if(p)s+=`<circle cx="${X(t)}" cy="${Y(p.time)}" r="5" fill="#ffb84a" stroke="#fff" stroke-width="1.5"/>`;
+  s+=`<text x="${Math.min(X(t),W-R)}" y="${H-B-5}" text-anchor="${X(t)>W-90?'end':'start'}" font-size="9" fill="#ffd28a">⚑ ${esc(m.name.slice(0,16))}</text>`});
+ const line=pts.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+' '+Y(p.time).toFixed(1)).join(' ');
+ s+=`<path d="${line} L${X(lp.t)} ${H-B} L${X(pts[0].t)} ${H-B} Z" fill="url(#ga)"/><path d="${line}" fill="none" stroke="#5be9dc" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+ pts.forEach((p,i)=>{s+=`<circle cx="${X(p.t)}" cy="${Y(p.time)}" r="${p.rb?5:3.6}" fill="${p.rb?'#ffb84a':'#fff'}" stroke="${p.rb?'#fff':'#0a5a78'}" stroke-width="1.5"/><circle class="hit" data-a="pt" data-v="${i}" cx="${X(p.t)}" cy="${Y(p.time)}" r="14" fill="transparent"/>`});
+ return s+'</svg>'}
+
+function vProgress(){
+ const ks=keys();
+ let h=`<h1>Progress</h1><div class="sub">Graph your improvement and see where you're headed</div>`;
+ if(!ks.length)return h+`<div class="glass"><div class="empty">Log your first swim to unlock graphs and projections.</div><button class="btn" data-a="log">Log a swim</button></div>`;
+ if(!ks.includes(pk))pk=ks[0];
+ const sw=swimsK(pk),best=pb(pk),first=sw[0].time,latest=sw[sw.length-1].time,pj=project(pk,Date.now()+ph*DAY),chg=best-first;
+ h+=`<select class="dsel" data-c="pk">${ks.map(k=>`<option value="${esc(k)}" ${k===pk?'selected':''}>${esc(evLabel(k))}</option>`).join('')}</select>`;
+ h+=`<div class="tiles"><div class="tile"><div class="k">PERSONAL BEST</div><div class="v">${fmt(best)}</div><div class="s">${sw.length} swim${sw.length>1?'s':''} logged</div></div>
+ <div class="tile"><div class="k">LATEST</div><div class="v">${fmt(latest)}</div><div class="s">${rel(sw[sw.length-1].date)}</div></div>
+ <div class="tile"><div class="k">SINCE FIRST SWIM</div><div class="v ${chg<0?'g':''}">${sw.length>1?fdelta(chg)+'s':'–'}</div><div class="s">${sw.length>1?Math.abs(chg/first*100).toFixed(1)+'% '+(chg<=0?'faster':'slower'):'Need 2+ swims'}</div></div>
+ <div class="tile"><div class="k">PROJECTED +${ph<=30?'1 MO':ph<=90?'3 MO':'6 MO'}</div><div class="v">${fmt(pj.time)}</div><div class="s">±${((pj.high-pj.low)/2).toFixed(2)}s</div></div></div>`;
+ h+=`<div class="ctl"><div><small>Range</small><div class="seg d">${[['3m','3M'],['6m','6M'],['1y','1Y'],['all','All']].map(r=>`<button class="${pr===r[0]?'on':''}" data-a="pr" data-v="${r[0]}">${r[1]}</button>`).join('')}</div></div>
+ <div><small>Project ahead</small><div class="seg d">${[[30,'1M'],[90,'3M'],[180,'6M']].map(r=>`<button class="${ph===r[0]?'on':''}" data-a="ph" data-v="${r[0]}">${r[1]}</button>`).join('')}</div></div></div>`;
+ h+=`<div class="glass" style="padding:14px 10px 14px">${chart(pk)}<div class="insp" id="insp" style="padding:0 8px">Dashed line = projection (shaded band is the likely range). <b style="color:#ffb84a">●</b> marks PBs — tap any dot for details.<br><b>${confTxt(pj.conf)}</b></div></div>`;
+ const c=pk.split('|')[0],ms=upcoming().filter(m=>m.course===c&&m.events.some(e=>key(m.course,e.event)===pk));
+ if(ms.length){h+=`<div class="sec">Upcoming meets</div><div class="sheetcard" style="margin:0 -6px 8px;padding:12px">`+ms.map(m=>{const p=project(pk,meetT(m));return `<div class="mini" data-a="tab" data-v="meets"><div class="l"><b>${esc(m.name)}</b><span>${fdate(m.date)} · ${daysTo(m)} days</span></div><div class="r">${fmt(p.time)}<span>±${((p.high-p.low)/2).toFixed(2)}</span></div></div>`}).join('')+'</div>'}
+ h+=`<div class="sec">All events</div><div class="sheetcard" style="margin:0 -6px;padding:12px">`+ks.map(k=>{const s2=swimsK(k),b=pb(k),ch=s2.length>1?b-s2[0].time:0;
+  const tt=s2.slice(-8).map(x=>x.time),mn=Math.min(...tt),mx=Math.max(...tt),rg=mx-mn||1;
+  const pl=tt.length>1?tt.map((v,i)=>(i*60/(tt.length-1)).toFixed(1)+','+(2+(v-mn)/rg*22).toFixed(1)).join(' '):'';
+  return `<div class="mini" data-a="selk" data-v="${esc(k)}"><div class="l"><b>${esc(evLabel(k))}</b><span>${s2.length} swims · ${s2.length>1?fdelta(ch)+'s all-time':'first swim'}</span></div><svg width="64" height="26" viewBox="0 0 64 26">${pl?`<polyline points="${pl}" fill="none" stroke="#12a2c4" stroke-width="2" stroke-linejoin="round"/>`:''}</svg><div class="r">${fmt(b)}<span class="${ch<0?'up':''}">PB</span></div></div>`}).join('')+'</div>';
+ return h}
+
+function evRow(m,ev){const k=key(m.course,ev.event),p=ev.proj,g=goalTime(k);
+ return `<div class="er"><div><b>${esc(ev.event)}</b>${g?`<div class="hint">Goal ${fmt(g)}${p&&p.time<=g?' ✓ on track':''}</div>`:''}</div><div class="p">${p?`${fmt(p.time)}<small><i class="cd" style="background:${confCol(p.conf)}"></i>±${((p.high-p.low)/2).toFixed(2)}</small>`:'<small>No data yet</small>'}</div></div>`}
+function vMeets(){
+ let h=`<h1>Meets</h1><div class="sub">Plan upcoming meets and review your meet scores</div>`;
+ h+=`<div class="seg d" style="margin-bottom:14px"><button class="${mTab==='plan'?'on':''}" data-a="mTab" data-v="plan">Meet Planner</button><button class="${mTab==='res'?'on':''}" data-a="mTab" data-v="res">Results & Scores</button></div>`;
+ if(mTab==='plan'){
+  const up=upcoming();up.forEach(refresh);
+  h+=`<button class="btn" data-a="addMeet" style="margin:0 0 16px">+ Plan a meet</button>`;
+  h+=up.map(m=>{const dt=daysTo(m);return `<div class="mc"><div class="t"><div><b>${esc(m.name)}</b><span class="s">${fdate(m.date)} · ${m.course}${m.loc?' · '+esc(m.loc):''}</span></div><span class="pill ${dt<=7?'am':''}">${dt<=0?'Today':dt+' day'+(dt>1?'s':'')}</span></div>
+   <div class="hint" style="margin-top:12px;font-weight:800;letter-spacing:.04em">PROJECTED TIMES</div>${m.events.map(e=>evRow(m,e)).join('')}
+   ${dt<=14&&dt>0?'<div class="tip">Taper window – cut volume, keep intensity, and trust the work you\'ve done.</div>':''}
+   <div class="acts"><button class="sm" data-a="editMeet" data-v="${m.id}">Edit</button>${dt<=0?`<button class="sm p" data-a="results" data-v="${m.id}">Upload results</button>`:''}<button class="sm d" data-a="delMeet" data-v="${m.id}" aria-label="Delete">✕</button></div></div>`}).join('')||`<div class="glass"><div class="empty">No upcoming meets. Plan one to get projected times for each event.</div></div>`;
+  h+=`<div class="cap" style="text-align:center">Projections refresh whenever you log new swims.</div>`}
+ else{
+  const pm=pastMeets(),sc=pm.filter(m=>m.score!=null);
+  h+=`<div class="cap" style="margin:-4px 2px 12px;line-height:1.5">A meet is created automatically for every day you log times. Tap one to review it, edit times or add events.</div>`;
+  if(sc.length)h+=`<div class="tiles"><div class="tile"><div class="k">SEASON AVERAGE</div><div class="v">${(sc.reduce((a,m)=>a+m.score,0)/sc.length).toFixed(1)}<small style="font-size:13px;opacity:.7"> /10</small></div><div class="s">${sc.length} scored meet${sc.length>1?'s':''}</div></div><div class="tile"><div class="k">LAST MEET</div><div class="v" style="color:${scoreCol(sc[0].score)}">${sc[0].score.toFixed(1)}</div><div class="s">${scoreLabel(sc[0].score)}</div></div></div>`;
+  h+=pm.map(m=>{const R=m.results||[],pbs=R.filter(r=>r.isPB&&r.prev!=null).length;
+   return `<div class="mc" data-a="detail" data-v="${m.id}" style="cursor:pointer"><div class="score">${m.score!=null?ring(m.score):`<div class="ring" style="width:64px;height:64px;display:grid;place-items:center;font-size:26px">⏱</div>`}<div style="flex:1;min-width:0"><b style="font-size:17px">${esc(m.name)}</b><div class="hint" style="margin-top:2px">${fdate(m.date)} · ${m.course}</div>${m.score!=null?`<div style="font-weight:800;font-size:13px;color:${scoreCol(m.score)};margin-top:4px">${scoreLabel(m.score)} · ${pbs} PB${pbs===1?'':'s'}</div>`:`<div style="margin-top:6px"><span class="pill am">Results needed</span></div>`}</div>${I(IC.arrow,'')}</div></div>`}).join('')||`<div class="glass"><div class="empty">No meets yet. Log a swim and a meet is created for that day automatically, with a Meet Score out of 10.</div></div>`;
+  h+=`<div class="glass"><div class="lbl">How Meet Score works</div><div class="cap" style="font-size:12.5px;line-height:1.5;color:#d4f1f7;margin-top:8px">Each event is scored from your <b>projected time</b> from the Meet Planner (55%) and your <b>improvement over your previous best</b> (45%). Matching your projection is about a 6, beating it earns 8+, and a big PB pushes toward 10. The meet score is the average of all events.</div></div>`}
+ return h}
+
+function vProfile(){
+ const ks=keys();
+ let h=`<h1>Profile</h1><div class="sub">Settings, data and install</div>`;
+ h+=`<div class="tiles"><div class="tile"><div class="k">SWIMS LOGGED</div><div class="v">${S.swims.length}</div></div><div class="tile"><div class="k">EVENTS TRACKED</div><div class="v">${ks.length}</div></div><div class="tile"><div class="k">MEETS</div><div class="v">${S.meets.length}</div></div><div class="tile"><div class="k">TARGETS</div><div class="v">${Object.keys(S.targets).length}</div></div></div>`;
+ h+=`<div class="sheetcard" style="margin:0 -6px 14px"><label class="f" style="margin-top:4px">Your name</label><input data-c="name" value="${esc(S.name)}" placeholder="Swimmer name" maxlength="30">
+ <label class="f">Default course</label><div class="seg">${COURSES.map(c=>`<button class="${S.course===c?'on':''}" data-a="course" data-v="${c}">${c}</button>`).join('')}</div></div>`;
+ h+=`<div class="sheetcard" style="margin:0 -6px 14px"><b>Install the app</b><div class="hint" style="margin:6px 0 4px;line-height:1.5">${deferred?'Add Streamline to your home screen for full-screen, offline use.':'iPhone: tap Share → Add to Home Screen. Android / desktop Chrome: use the install icon in the address bar or ⋮ → Install app.'}</div>${deferred?'<button class="btn" data-a="install" style="margin-top:8px">Install</button>':''}</div>`;
+ h+=`<div class="sheetcard" style="margin:0 -6px"><b>Your data</b><div class="hint" style="margin:6px 0 0">Everything is stored privately on this device.</div>
+ <button class="btn ghost" data-a="export">Export backup (.json)</button><button class="btn ghost" data-a="import" style="margin-top:10px">Import backup</button>
+ <button class="btn ghost" data-a="sample" style="margin-top:10px">Load sample data</button><button class="btn danger" data-a="reset" style="margin-top:10px">Erase all data</button></div><input type="file" id="imp" accept="application/json" hidden>`;
+ return h}
+
+/* ============ sheets ============ */
+function sheet(html,mount){const w=$('#sw');w.innerHTML=`<div class="sheet"><div class="grab"></div>${html}</div>`;w.classList.add('on');if(mount)mount(w)}
+function closeSheet(){const w=$('#sw');w.classList.remove('on');w.innerHTML=''}
+$('#sw').addEventListener('click',e=>{if(e.target.id==='sw')closeSheet()});
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)}
+const segHTML=(id,opts,cur)=>`<div class="seg" id="${id}">${opts.map(o=>`<button type="button" data-s="${o[0]}" class="${cur===o[0]?'on':''}">${o[1]}</button>`).join('')}</div>`;
+function segBind(id,cb){const el=$('#'+id);el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.s)})}
+
+function openLog(id,back){
+ const ex=id?S.swims.find(x=>x.id===id):null;
+ let course=ex?ex.course:S.course,selEv=ex?ex.event:(S.lastEv||'100 Free');
+ const evOpts=()=>evFor(course).map(e=>`<option ${e===selEv?'selected':''}>${e}</option>`).join('');
+ sheet(`<h2>${ex?'Edit swim':'Log a swim'}</h2><label class="f">Course</label>${segHTML('lc',COURSES.map(c=>[c,c]),course)}
+ <label class="f">Event</label><select class="in" id="lev">${evOpts()}</select>
+ <label class="f">Time <span class="hint">(e.g. 58.32 or 1:02.45)</span></label><input id="ltime" placeholder="1:02.45" autocomplete="off" autocapitalize="off" value="${ex?fmt(ex.time):''}">
+ <label class="f">Date</label><input type="date" id="ldate" value="${ex?ex.date:today()}" max="${today()}">
+ <div class="hint" style="margin-top:8px">Times from the same day are grouped into one meet automatically.</div>
+ <label class="f">Note <span class="hint">(optional)</span></label><input id="lnote" maxlength="60" placeholder="Felt strong, negative split…" value="${esc(ex?ex.note||'':'')}">
+ <button class="btn" id="lsave">${ex?'Save changes':'Save swim'}</button>${ex?'<button class="btn danger" id="ldel" style="margin-top:10px">Delete swim</button>':''}`,()=>{
+  segBind('lc',v=>{course=v;selEv=$('#lev').value;if(!evFor(course).includes(selEv))selEv='100 Free';$('#lev').innerHTML=evOpts()});
+  const done=()=>{closeSheet();render(true);const mm=back&&S.meets.find(m=>m.id===back);if(mm&&mm.results)openDetail(back)};
+  $('#lsave').onclick=()=>{const tm=parseT($('#ltime').value);if(tm==null){toast('Enter a valid time, e.g. 58.32 or 1:02.45');return}
+   const e=$('#lev').value,date=$('#ldate').value||today(),k=key(course,e);
+   if(ex){Object.assign(ex,{event:e,course,date,time:tm,note:$('#lnote').value.trim()});pk=k;commit();done();toast('Swim updated');return}
+   const prev=pb(k);S.swims.push({id:uid(),date,event:e,course,time:tm,type:'meet',note:$('#lnote').value.trim()});S.lastEv=e;pk=k;commit();closeSheet();render(true);
+   const mt=S.meets.find(x=>x.date===date&&x.course===course);
+   toast((prev==null?'First '+e+' logged!':tm<prev?'🔥 New PB! '+fmt(tm)+' ('+fdelta(tm-prev)+'s)':'Saved '+fmt(tm))+(mt?' · '+mt.name:''))};
+  if(ex)$('#ldel').onclick=()=>{if(confirm('Delete this swim?')){S.swims=S.swims.filter(x=>x.id!==ex.id);commit();done();toast('Swim deleted')}};
+  if(!ex)setTimeout(()=>$('#ltime').focus(),260)})}
+
+function openTarget(ek){
+ const ex=ek?S.targets[ek]:null;let course=ek?ek.split('|')[0]:S.course;
+ sheet(`<h2>${ex?'Edit goal':'Set a goal'}</h2>${ex?`<div style="font-weight:800;font-size:17px;margin:6px 0">${esc(evLabel(ek))}</div>`:`<label class="f">Course</label>${segHTML('tc',COURSES.map(c=>[c,c]),course)}<label class="f">Event</label><select class="in" id="tev">${evFor(course).map(e=>`<option>${e}</option>`).join('')}</select>`}
+ <label class="f">Goal time</label><input id="ttime" placeholder="e.g. 50.99" autocomplete="off" value="${ex?fmt(ex.time):''}"><div class="hint" id="thint" style="margin-top:6px"></div>
+ <label class="f">Target date <span class="hint">(optional – get a projection for that day)</span></label><input type="date" id="tby" value="${ex?ex.by||'':''}" min="${today()}">
+ <button class="btn" id="tsave">${ex?'Save goal':'Add goal'}</button>${ex?'<button class="btn danger" id="tdel" style="margin-top:10px">Remove goal</button>':''}`,()=>{
+  const evk=()=>ex?ek:key(course,$('#tev').value);
+  const upd=()=>{const b=pb(evk());$('#thint').textContent=b!=null?'Your PB: '+fmt(b):'No swims logged for this event yet';if(b!=null&&!ex)$('#ttime').placeholder=fmt(b*.98)};
+  if(!ex){segBind('tc',v=>{course=v;$('#tev').innerHTML=evFor(course).map(e=>`<option>${e}</option>`).join('');upd()});$('#tev').onchange=upd}
+  upd();
+  $('#tsave').onclick=()=>{const tm=parseT($('#ttime').value);if(tm==null){toast('Enter a valid goal time');return}S.targets[evk()]={time:tm,by:$('#tby').value||''};save();closeSheet();render(true);toast(ex?'Goal updated':'Goal added')};
+  if(ex)$('#tdel').onclick=()=>{delete S.targets[ek];save();closeSheet();render(true);toast('Goal removed')}})}
+
+function openMeetForm(id){
+ const ex=id?S.meets.find(m=>m.id===id):null;
+ const lock=!!ex&&S.swims.some(x=>x.meetId===ex.id);
+ let course=ex?ex.course:S.course;const sel=new Set(ex?ex.events.map(e=>e.event):[]);
+ const chips=()=>{const have=new Set(keys().filter(k=>k.startsWith(course+'|')).map(k=>k.split('|')[1]));return evFor(course).slice().sort((a,b)=>(have.has(b)-have.has(a))).map(e=>`<button type="button" class="ec ${sel.has(e)?'on':''}" data-e="${e}">${e}</button>`).join('')};
+ sheet(`<h2>${ex?'Edit meet':'Plan a meet'}</h2><label class="f">Meet name</label><input id="mn" maxlength="40" placeholder="Winter Championships" value="${esc(ex?ex.name:'')}">
+ <label class="f">Date</label><input type="date" id="md" value="${ex?ex.date:''}"><label class="f">Location <span class="hint">(optional)</span></label><input id="ml" maxlength="40" placeholder="Aquatic Center" value="${esc(ex?ex.loc||'':'')}">
+ <label class="f">Course</label>${lock?`<div class="hint">${course} – set by the times logged at this meet</div>`:segHTML('mc',COURSES.map(c=>[c,c]),course)}<label class="f">Events <span class="hint">(events with logged swims are listed first)</span></label><div class="chipset" id="mev">${chips()}</div>
+ <button class="btn" id="msave">${ex?'Save changes':'Add to planner'}</button>`,()=>{
+  if(!lock)segBind('mc',v=>{course=v;sel.clear();$('#mev').innerHTML=chips()});
+  $('#mev').addEventListener('click',e=>{const b=e.target.closest('.ec');if(!b)return;const v=b.dataset.e;sel.has(v)?sel.delete(v):sel.add(v);b.classList.toggle('on')});
+  $('#msave').onclick=()=>{const name=$('#mn').value.trim()||'Swim meet',date=$('#md').value;if(!date){toast('Pick a meet date');return}if(!sel.size){toast('Choose at least one event');return}
+   const loc=$('#ml').value.trim(),mt=tOf(date),mk=e=>project(key(course,e),mt,date>=today()?undefined:mt-DAY)||null;
+   if(ex){
+    const drop=ex.events.filter(e=>!sel.has(e.event)&&S.swims.some(s=>s.meetId===ex.id&&s.event===e.event));
+    if(drop.length&&!confirm('Dropping '+drop.map(e=>e.event).join(', ')+' will delete the times logged for '+(drop.length>1?'them':'it')+'. Continue?'))return;
+    S.swims=S.swims.filter(s=>!(s.meetId===ex.id&&drop.some(e=>e.event===s.event)));
+    S.swims.forEach(s=>{if(s.meetId===ex.id)s.date=date});
+    const old=Object.fromEntries(ex.events.map(e=>[e.event,e]));
+    const events=[...sel].map(e=>(ex.course===course&&old[e])?old[e]:{event:e,proj:mk(e)});
+    Object.assign(ex,{name,date,loc,course,events,auto:false})}
+   else S.meets.push({id:uid(),name,date,loc,course,events:[...sel].map(e=>({event:e,proj:mk(e)})),created:today()});
+   commit();closeSheet();mTab=(date>=today()&&!S.swims.some(s=>s.date===date&&s.course===course))?'plan':'res';render(true);toast(ex?'Meet updated':'Meet added – projections ready')}})}
+
+function openResults(id){
+ const m=S.meets.find(x=>x.id===id);if(!m)return;
+ const evs=m.events.map(e=>e.event),vals={};
+ evs.forEach(e=>{const sw=S.swims.filter(x=>x.meetId===m.id&&x.event===e);vals[e]=sw.length?fmt(Math.min(...sw.map(x=>x.time))):''});
+ const prj=e=>{const ev=m.events.find(x=>x.event===e);return ev&&ev.proj?` <span class="hint">projected ${fmt(ev.proj.time)}</span>`:''};
+ sheet(`<h2>${m.results?'Edit times':'Meet results'}</h2><div class="hint">${esc(m.name)} · ${fdate(m.date)}. Enter or change your times – clear a box to remove that swim.</div><div id="rl"></div>
+ <label class="f">Add another event</label><div style="display:flex;gap:8px"><select class="in" id="rad"></select><button class="sm p" id="radb" style="flex:none;width:90px">Add</button></div>
+ <button class="btn" id="rsave">Save & update Meet Score</button>`,()=>{
+  const draw=()=>{$('#rl').innerHTML=evs.map(e=>`<label class="f">${esc(e)}${prj(e)}</label><input data-e="${esc(e)}" placeholder="e.g. 1:02.45" value="${esc(vals[e])}" autocomplete="off">`).join('');
+   $('#rad').innerHTML=evFor(m.course).filter(e=>!evs.includes(e)).map(e=>`<option>${e}</option>`).join('')};
+  draw();
+  $('#rl').addEventListener('input',e=>{if(e.target.dataset.e)vals[e.target.dataset.e]=e.target.value});
+  $('#radb').onclick=()=>{const e=$('#rad').value;if(e&&!evs.includes(e)){evs.push(e);vals[e]='';draw();const inp=$('#rl').querySelector('input[data-e="'+e+'"]');if(inp)inp.focus()}};
+  $('#rsave').onclick=()=>{const parsed={};
+   for(const e of evs){const v=(vals[e]||'').trim();if(!v)continue;const t=parseT(v);if(t==null){toast('The '+e+' time looks invalid');return}parsed[e]=t}
+   evs.forEach(e=>{const cur=S.swims.filter(x=>x.meetId===m.id&&x.event===e),t=parsed[e];
+    if(t==null){S.swims=S.swims.filter(x=>!(x.meetId===m.id&&x.event===e));return}
+    if(cur.length&&Math.min(...cur.map(x=>x.time))===t)return;
+    S.swims=S.swims.filter(x=>!(x.meetId===m.id&&x.event===e));
+    S.swims.push({id:uid(),date:m.date,event:e,course:m.course,time:t,type:'meet',meetId:m.id,note:''})});
+   commit();closeSheet();mTab='res';render(true);const mm=S.meets.find(x=>x.id===id);if(mm&&mm.results)openDetail(id)}})}
+function insights(m){const R=m.results||[],L=[];if(!R.length)return L;
+ const pbs=R.filter(r=>r.isPB&&r.prev!=null),beat=R.filter(r=>r.proj!=null&&r.time<=r.proj),wp=R.filter(r=>r.proj!=null).length,fi=R.filter(r=>r.prev==null).length;
+ L.push(`${pbs.length} of ${R.length-fi} events were new personal bests${fi?` (${fi} first-time swim${fi>1?'s':''})`:''}.`);
+ if(wp)L.push(`You beat your planner projection in ${beat.length} of ${wp} events.`);
+ const imp=R.filter(r=>r.prev!=null).sort((a,b)=>((b.prev-b.time)/b.prev)-((a.prev-a.time)/a.prev))[0];
+ if(imp&&imp.time<imp.prev)L.push(`Biggest drop: ${imp.event}, ${(imp.prev-imp.time).toFixed(2)}s (${((imp.prev-imp.time)/imp.prev*100).toFixed(1)}%) off your old best.`);
+ const worst=R.filter(r=>r.proj!=null).sort((a,b)=>((b.time-b.proj)/b.proj)-((a.time-a.proj)/a.proj))[0];
+ if(worst&&worst.time>worst.proj*1.005)L.push(`${worst.event} was the one to revisit – ${(worst.time-worst.proj).toFixed(2)}s slower than projected.`);
+ return L}
+function openDetail(id){
+ const m=S.meets.find(x=>x.id===id);if(!m)return;const R=m.results||[];
+ sheet(`<div class="score" style="margin-bottom:6px">${m.score!=null?ring(m.score,84):''}<div><h2 style="margin:0">${esc(m.name)}</h2><div class="hint">${fdate(m.date)} · ${m.course}${m.loc?' · '+esc(m.loc):''}</div>${m.score!=null?`<div style="font-weight:800;color:${scoreCol(m.score)};margin-top:4px">${scoreLabel(m.score)} · ${m.score.toFixed(1)} / 10</div>`:''}</div></div>
+ ${R.length?'<div class="hint" style="margin:8px 0 2px">Tap a time to edit or delete it</div>'+R.map(r=>`<div class="dr" data-a="editSwim" data-v="${r.sid}" data-b="${m.id}" style="cursor:pointer"><div><b>${esc(r.event)}</b>${r.isPB&&r.prev!=null?'<span class="pb">PB</span>':''}<div class="hint">${r.proj!=null?`vs proj ${fdelta(r.time-r.proj)}s`:'no projection'}${r.prev!=null?` · vs PB ${fdelta(r.time-r.prev)}s`:' · first swim'}</div></div><div style="text-align:right"><b style="font-size:17px">${fmt(r.time)} ✎</b><div class="hint" style="color:${scoreCol(r.score)};font-weight:800">${r.score.toFixed(1)}/10</div></div></div>`).join(''):'<div class="empty">No times for this meet yet.</div>'}
+ ${insights(m).length?`<div class="tip" style="background:#e9f7fb;color:#0a5a78;margin-top:12px">${insights(m).map(l=>'• '+esc(l)).join('<br>')}</div>`:''}
+ <button class="btn" data-a="results" data-v="${m.id}">${R.length?'Edit times / add events':'Add times'}</button><button class="btn ghost" data-a="editMeet" data-v="${m.id}" style="margin-top:10px">Rename or edit meet</button><button class="btn danger" data-a="delMeet" data-v="${m.id}" style="margin-top:10px">Delete meet</button>`)}
+
+function openWelcome(){
+ let c='SCY';
+ sheet(`<div style="text-align:center"><div style="width:68px;height:68px;border-radius:22px;margin:4px auto 10px;background:linear-gradient(135deg,#12a2c4,#06577a);color:#fff;display:grid;place-items:center"><div style="width:42px">${SWIM}</div></div><h2>Welcome to Streamline</h2><div class="hint" style="line-height:1.5;margin-bottom:6px">Log times, graph your progress, project future swims and plan meets.</div></div>
+ <label class="f">Your name</label><input id="wn" placeholder="Swimmer name" maxlength="30"><label class="f">Usual course</label>${segHTML('wc',COURSES.map(x=>[x,x]),c)}
+ <button class="btn" id="w1">Start fresh</button><button class="btn ghost" id="w2" style="margin-top:10px">Explore with sample data</button>`,()=>{
+  segBind('wc',v=>c=v);
+  const fin=smp=>{S.name=$('#wn').value.trim()||S.name;S.course=c;S.seen=true;if(smp)seed();save();closeSheet();render()};
+  $('#w1').onclick=()=>fin(false);$('#w2').onclick=()=>fin(true)})}
+
+/* ============ sample data ============ */
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function seed(){
+ S.swims=[];S.meets=[];S.targets={};const r=rng(11),T0=tOf(today()),off=d=>dstr(new Date(T0+d*DAY));
+ if(!S.name)S.name='Alex M.';
+ const specs={'50 Free':[24.9,23.1],'100 Free':[55.6,51.7],'200 Free':[121.4,112.9],'100 Back':[62.8,58.0],'100 Fly':[61.2,56.6],'200 IM':[138.6,128.3]},evs=Object.keys(specs);
+ const ab=(e,d)=>{const sp=specs[e],p=clamp((d+345)/345,0,1.05);return sp[1]+(sp[0]-sp[1])*Math.exp(-2.4*p)};
+ const days=[];let d=-340+Math.floor(r()*8);while(d<-6){days.push(d);d+=21+Math.floor(r()*12)}days.push(-3);
+ days.forEach(d=>{const n=2+Math.floor(r()*3);evs.slice().sort(()=>r()-.5).slice(0,n).forEach(e=>S.swims.push({id:uid(),date:off(d),event:e,course:'SCY',time:Math.round(ab(e,d)*(1+(r()-.5)*.013)*100)/100,type:'meet',note:''}))});
+ commit();
+ const nms=['Season Opener','Fall Invitational','Metro Championships','Halloween Splash'];
+ S.meets.slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-5,-1).forEach((m,i)=>{m.name=nms[i];m.auto=false});
+ [[24,'Winter Classic','Northgate Pool',['50 Free','100 Free','200 Free','100 Back','100 Fly']],[75,'Regional Qualifier','State Aquatic Center',['100 Free','200 Free','200 IM']]].forEach(([d,name,loc,es])=>{
+  S.meets.push({id:uid(),name,date:off(d),loc,course:'SCY',events:es.map(e=>({event:e,proj:project(key('SCY',e),T0+d*DAY)})),created:today()})});
+ S.targets={'SCY|100 Free':{time:50.5,by:off(60)},'SCY|200 Free':{time:110,by:''},'SCY|50 Free':{time:22.9,by:''}};
+ S.seen=true;pk='SCY|100 Free';commit()}
+
+/* ============ render + events ============ */
+function render(keep){
+ const v=$('#view'),st=v.scrollTop;v.innerHTML=({home:vHome,progress:vProgress,meets:vMeets,profile:vProfile})[tab]();v.scrollTop=keep?st:0;
+ document.querySelectorAll('.nv').forEach(b=>{const t=b.dataset.v;b.classList.toggle('on',t===tab);b.innerHTML=I(IC[{home:'home',progress:'chart',meets:'flag',profile:'user'}[t]])+'<span>'+{home:'Home',progress:'Progress',meets:'Meets',profile:'Profile'}[t]+'</span>'})}
+function act(a,v,el){switch(a){
+ case 'tab':tab=v;render();break;
+ case 'log':openLog();break;
+ case 'hTab':hTab=v;render(true);break;
+ case 'mTab':mTab=v;render(true);break;
+ case 'pr':pr=v;render(true);break;
+ case 'ph':ph=+v;render(true);break;
+ case 'selk':pk=v;render();break;
+ case 'pt':{const p=CP[+v];if(!p)break;const i=$('#insp');const inf=swimInfo(p);i.innerHTML=`<b>${fmt(p.time)}</b> · ${fdate(p.date,true)} ${inf.isPB?' · <b style="color:#ffb84a">PB</b>':''}${inf.delta!=null?`<br>${fdelta(inf.delta)}s vs previous swim`:''}${p.note?'<br>“'+esc(p.note)+'”':''} <a href="#" data-a="editSwim" data-v="${p.id}" style="color:#7fe0ff;margin-left:8px">edit</a> <a href="#" data-a="delSwim" data-v="${p.id}" style="color:#ff9a9a;margin-left:8px">delete</a>`;break}
+ case 'delSwim':if(confirm('Delete this swim?')){S.swims=S.swims.filter(x=>x.id!==v);commit();render(true)}break;
+ case 'editSwim':openLog(v,el.dataset.b);break;
+ case 'editTarget':openTarget(v);break;
+ case 'addMeet':openMeetForm();break;
+ case 'editMeet':openMeetForm(v);break;
+ case 'results':openResults(v);break;
+ case 'detail':openDetail(v);break;
+ case 'delMeet':if(confirm('Delete this meet and any swims uploaded from it?')){S.swims=S.swims.filter(x=>x.meetId!==v);S.meets=S.meets.filter(m=>m.id!==v);commit();closeSheet();render(true)}break;
+ case 'addTarget':openTarget();break;
+ case 'delTarget':delete S.targets[v];save();render(true);break;
+ case 'course':S.course=v;save();render(true);break;
+ case 'install':if(deferred){deferred.prompt();deferred=null;render(true)}break;
+ case 'export':{const b=new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download='streamline-backup-'+today()+'.json';l.click();setTimeout(()=>URL.revokeObjectURL(u),2000);break}
+ case 'import':$('#imp').click();break;
+ case 'sample':if(!S.swims.length||confirm('Replace your current data with sample data?')){seed();save();tab='home';render();toast('Sample data loaded')}break;
+ case 'reset':if(confirm('Erase ALL swims, meets and targets on this device?')){const n=S.name;S=blank();S.name=n;S.seen=true;save();pk=null;tab='home';render();toast('Data erased')}break}}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;if(el.tagName==='A')e.preventDefault();act(el.dataset.a,el.dataset.v,el)});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-c]');if(!el)return;
+ if(el.dataset.c==='pk'){pk=el.value;render(true)}
+ else if(el.dataset.c==='name'){S.name=el.value.trim();save();toast('Name saved')}
+ else if(e.target.id==='imp'){}});
+document.addEventListener('change',e=>{if(e.target.id!=='imp')return;const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d||!Array.isArray(d.swims))throw 0;S=normTargets(Object.assign(blank(),d,{v:1,seen:true}));commit();pk=null;tab='home';render();toast('Backup imported')}catch(x){toast('That file is not a valid backup')}};rd.readAsText(f)});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(tab==='profile')render(true)});
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(S.swims.length)commit();render();if(!S.seen)openWelcome();
+})();
+</script>
+</body>
+</html>
